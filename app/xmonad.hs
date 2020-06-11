@@ -36,47 +36,7 @@ myConfig proc =
     , terminal = "alacritty"
     , modMask = mod4Mask
     , borderWidth = 0
-    , focusedBorderColor = "#b58900"
     }
-
-myStartupHook :: X ()
-myStartupHook = do
-  spawnOnce "/home/david/.fehbg"
-  spawnOnce "picom -f &"
-  spawnOnce "qmenu_registrar &"
-
---  spawnOnce "nm-applet &"
-base03 = "#002b36"
-
-base02 = "#073642"
-
-base01 = "#586e75"
-
-base00 = "#657b83"
-
-base0 = "#839496"
-
-base1 = "#93a1a1"
-
-base2 = "#eee8d5"
-
-base3 = "#fdf6e3"
-
-yellow = "#b58900"
-
-orange = "#cb4b16"
-
-red = "#dc322f"
-
-magenta = "#d33682"
-
-violet = "#6c71c4"
-
-blue = "#268bd2"
-
-cyan = "#2aa198"
-
-green = "#859900"
 
 active = cyan
 
@@ -93,12 +53,18 @@ topBarTheme =
     , decoHeight = 5
     }
 
+myStartupHook :: X ()
+myStartupHook = do
+  spawnOnce "/home/david/.fehbg"
+  spawnOnce "picom -f &"
+  spawnOnce "qmenu_registrar &"
+
 myLayoutHook = avoidStruts $ deco vert ||| mono ||| deco horiz
   where
     mySpacing = spacingRaw True (Border 5 5 5 5) True (Border 5 5 5 5) True
-    mono = renamed [Replace "\xe9e1"] $ mySpacing Full
-    vert = renamed [Replace "\xe900"] $ mySpacing $ Tall 1 (3 / 100) 0.65
-    horiz = renamed [Replace "\xea1b"] $ mySpacing $ Mirror (Tall 1 (3 / 100) 0.65)
+    mono = renamed [Replace monoIcon] $ mySpacing Full
+    vert = renamed [Replace vertIcon] $ mySpacing $ Tall 1 (3 / 100) 0.65
+    horiz = renamed [Replace horizIcon] $ mySpacing $ Mirror (Tall 1 (3 / 100) 0.65)
     deco layout =
       renamed [CutWordsLeft 11] $ IfMaxAlt 1 layout (noFrillsDeco shrinkText topBarTheme layout)
 
@@ -243,3 +209,41 @@ myManageHook =
     , resource =? "desktop_window" --> doIgnore
     , resource =? "kdesktop" --> doIgnore
     ]
+
+base03 = "#002b36"
+
+base02 = "#073642"
+
+base01 = "#586e75"
+
+base00 = "#657b83"
+
+base0 = "#839496"
+
+base1 = "#93a1a1"
+
+base2 = "#eee8d5"
+
+base3 = "#fdf6e3"
+
+yellow = "#b58900"
+
+orange = "#cb4b16"
+
+red = "#dc322f"
+
+magenta = "#d33682"
+
+violet = "#6c71c4"
+
+blue = "#268bd2"
+
+cyan = "#2aa198"
+
+green = "#859900"
+
+monoIcon = "\xe9e1"
+
+vertIcon = "\xe900"
+
+horizIcon = "\xea1b"
