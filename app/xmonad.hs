@@ -5,11 +5,12 @@ import System.Exit (exitSuccess)
 import System.IO
 import System.Posix.Process (executeFile)
 import XMonad
+import XMonad.Actions.CycleWS
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.FadeInactive
 import XMonad.Hooks.ManageDocks
-import XMonad.Layout.IfMax
+import XMonad.Layout.IfMaxAlt
 import XMonad.Layout.NoBorders
 import XMonad.Layout.NoFrillsDecoration
 import XMonad.Layout.Renamed
@@ -42,9 +43,9 @@ myStartupHook :: X ()
 myStartupHook = do
   spawnOnce "/home/david/.fehbg"
   spawnOnce "picom -f &"
-  spawnOnce "nm-applet &"
   spawnOnce "qmenu_registrar &"
 
+--  spawnOnce "nm-applet &"
 base03 = "#002b36"
 
 base02 = "#073642"
@@ -99,7 +100,7 @@ myLayoutHook = avoidStruts $ deco vert ||| mono ||| deco horiz
     vert = renamed [Replace "\xe900"] $ mySpacing $ Tall 1 (3 / 100) 0.65
     horiz = renamed [Replace "\xea1b"] $ mySpacing $ Mirror (Tall 1 (3 / 100) 0.65)
     deco layout =
-      renamed [CutWordsLeft 11] $ IfMax 1 layout (noFrillsDeco shrinkText topBarTheme layout)
+      renamed [CutWordsLeft 11] $ IfMaxAlt 1 layout (noFrillsDeco shrinkText topBarTheme layout)
 
 myLogHook :: Handle -> X ()
 myLogHook proc =
@@ -175,9 +176,11 @@ myKeys conf =
     ] ++
   section
     "Switching workspaces"
-    [ ("M-" ++ m ++ k, n ++ i, windows $ f i)
+    [ ("M-" ++ m ++ k, n ++ i, f i)
     | (f, m, n) <-
-        [(W.greedyView, "", "Switch to workspace "), (W.shift, "S-", "Move client to workspace ")]
+        [ (toggleOrView, "", "Switch to workspace ")
+        , (windows . W.shift, "S-", "Move client to workspace ")
+        ]
     , (i, k) <- zip (XMonad.workspaces conf) (map show [1 .. 9])
     ] ++
   section
