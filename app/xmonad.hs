@@ -1,45 +1,70 @@
-import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
+import Data.Semigroup
 import System.Exit (exitSuccess)
 import System.IO
-import System.Posix.Process (executeFile)
 import XMonad
 import XMonad.Actions.CycleWS
+import XMonad.Actions.DynamicProjects
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.FadeInactive
 import XMonad.Hooks.ManageDocks
+import XMonad.Layout.Decoration
 import XMonad.Layout.IfMaxAlt
-import XMonad.Layout.NoBorders
 import XMonad.Layout.NoFrillsDecoration
 import XMonad.Layout.Renamed
 import XMonad.Layout.Spacing
+import XMonad.Prompt
 import qualified XMonad.StackSet as W
 import XMonad.Util.Dmenu
 import XMonad.Util.EZConfig
 import XMonad.Util.NamedActions
 import XMonad.Util.Run
 import XMonad.Util.SpawnOnce
+import XMonad.Util.WorkspaceCompare
 
+main :: IO ()
 main = do
   proc <- spawnPipe "xmobar"
-  xmonad $ ewmh $ docks $ myConfig proc
+  xmonad $ ewmh $ docks $ dynamicProjects projects $ myConfig proc
+  where
+    myConfig proc =
+      addKeys $
+      def
+        { layoutHook = avoidStruts $ deco vert ||| mono ||| deco horiz
+        , logHook = myLogHook proc
+        , manageHook = myManageHook
+        , startupHook = myStartupHook
+        , terminal = "alacritty"
+        , modMask = mod4Mask
+        , borderWidth = 0
+        , workspaces = map projectName projects
+        }
 
-myConfig proc =
-  addKeys $
-  def
-    { layoutHook = myLayoutHook
-    , logHook = myLogHook proc
-    , manageHook = myManageHook
-    , startupHook = myStartupHook
-    , terminal = "alacritty"
-    , modMask = mod4Mask
-    , borderWidth = 0
-    }
+mySpacing :: l a -> ModifiedLayout Spacing l a
+mySpacing = spacingRaw True (Border 5 5 5 5) True (Border 5 5 5 5) True
 
+mono :: ModifiedLayout Rename (ModifiedLayout Spacing Full) a
+mono = renamed [Replace monoIcon] $ mySpacing Full
+
+vert :: ModifiedLayout Rename (ModifiedLayout Spacing Tall) a
+vert = renamed [Replace vertIcon] $ mySpacing $ Tall 1 (3 / 100) 0.65
+
+horiz :: ModifiedLayout Rename (ModifiedLayout Spacing (Mirror Tall)) a
+horiz = renamed [Replace horizIcon] $ mySpacing $ Mirror (Tall 1 (3 / 100) 0.65)
+
+deco ::
+     Eq a
+  => l a
+  -> ModifiedLayout Rename (IfMaxAlt l (ModifiedLayout (Decoration NoFrillsDecoration DefaultShrinker) l)) a
+deco layout =
+  renamed [CutWordsLeft 11] $ IfMaxAlt 1 layout (noFrillsDeco shrinkText topBarTheme layout)
+
+active :: String
 active = cyan
 
+topBarTheme :: Theme
 topBarTheme =
   def
     { inactiveBorderColor = base03
@@ -53,20 +78,48 @@ topBarTheme =
     , decoHeight = 5
     }
 
+promptConfig :: XMonad.Prompt.XPConfig
+promptConfig =
+  def
+    { font = "xft:Noto Sans:size=12"
+    , bgColor = base03
+    , fgColor = base0
+    , fgHLight = base03
+    , bgHLight = yellow
+    , borderColor = base02
+    , height = 24
+    }
+
+projects :: [Project]
+projects =
+  [ Project
+      {projectName = "Web", projectDirectory = "~/Downloads", projectStartHook = Just launchBrowser}
+  , Project
+      { projectName = "Xmo"
+      , projectDirectory = "~/projects/xmo"
+      , projectStartHook =
+          Just $ do
+            sendMessage NextLayout
+            runInTerm "" "stack build"
+            runInTerm "" "zsh -i -c vim"
+      }
+  , Project {projectName = "scratch", projectDirectory = "~/", projectStartHook = Nothing}
+  , Project
+      { projectName = "Comms"
+      , projectDirectory = "~/"
+      , projectStartHook =
+          Just $ do
+            launchOutlook
+            launchTeams
+      }
+  ]
+
 myStartupHook :: X ()
 myStartupHook = do
   spawnOnce "/home/david/.fehbg"
   spawnOnce "picom -f &"
   spawnOnce "qmenu_registrar &"
-
-myLayoutHook = avoidStruts $ deco vert ||| mono ||| deco horiz
-  where
-    mySpacing = spacingRaw True (Border 5 5 5 5) True (Border 5 5 5 5) True
-    mono = renamed [Replace monoIcon] $ mySpacing Full
-    vert = renamed [Replace vertIcon] $ mySpacing $ Tall 1 (3 / 100) 0.65
-    horiz = renamed [Replace horizIcon] $ mySpacing $ Mirror (Tall 1 (3 / 100) 0.65)
-    deco layout =
-      renamed [CutWordsLeft 11] $ IfMaxAlt 1 layout (noFrillsDeco shrinkText topBarTheme layout)
+  activateProject (head projects)
 
 myLogHook :: Handle -> X ()
 myLogHook proc =
@@ -74,11 +127,25 @@ myLogHook proc =
   dynamicLogWithPP
     xmobarPP
       { ppOutput = hPutStrLn proc
-      , ppTitle = xmobarColor "#2aa198" "" . shorten 50
-      , ppCurrent = xmobarColor "#b58900" "" . wrap "[" "]"
+      , ppTitle = xmobarColor cyan "" . shorten 50
+      , ppCurrent = xmobarColor yellow "" . wrap "[" "]"
       , ppSep = "  "
-      , ppLayout = \s -> "<fn=1>" ++ s ++ "</fn>"
+      , ppLayout = \s -> " <fn=1>" ++ s ++ "</fn>"
+      , ppOrder = \(ws:l:t:_) -> [l, ws, t]
+      , ppSort = mkWsSort getWsCompare
       }
+
+launchBrowser :: X ()
+launchBrowser = spawn "brave"
+
+launchEvernote :: X ()
+launchEvernote = spawn "chromium --app=http://www.evernote.com/Home.action"
+
+launchOutlook :: X ()
+launchOutlook = spawn "chromium --app=https://outlook.office.com/mail/inbox"
+
+launchTeams :: X ()
+launchTeams = spawn "chromium --app=https://teams.microsoft.com/_#/calendarv2"
 
 addKeys :: XConfig a -> XConfig a
 addKeys conf = addDescrKeys' ((modMask conf, xK_b), displayKeyMap) myKeys conf
@@ -95,9 +162,9 @@ myKeys conf =
     ] ++
   section
     "Launch specific applications"
-    [ ("M-n", "Launch Evernote", spawn "chromium --app=http://www.evernote.com/Home.action")
-    , ("M-o", "Launch Outlook", spawn "chromium --app=https://outlook.office.com/mail/inbox")
-    , ("M-S-o", "Launch Teams", spawn "chromium --app=https://teams.microsoft.com/_#/calendarv2")
+    [ ("M-n", "Launch Evernote", launchEvernote)
+    , ("M-o", "Launch Outlook", launchOutlook)
+    , ("M-S-o", "Launch Teams", launchTeams)
     ] ++
   section
     "Changing layouts"
@@ -141,13 +208,18 @@ myKeys conf =
     , ("M-S-z", "Lock", spawn "i3lock-fancy")
     ] ++
   section
+    "Projects"
+    [ ("M-x", "Switch to project", switchProjectPrompt promptConfig)
+    , ("M-S-x", "Shift window to project", shiftToProjectPrompt promptConfig)
+    ] ++
+  section
     "Switching workspaces"
     [ ("M-" ++ m ++ k, n ++ i, f i)
     | (f, m, n) <-
         [ (toggleOrView, "", "Switch to workspace ")
         , (windows . W.shift, "S-", "Move client to workspace ")
         ]
-    , (i, k) <- zip (XMonad.workspaces conf) (map show [1 .. 9])
+    , (i, k) <- zip (XMonad.workspaces conf) (map show [1 .. 9 :: Integer])
     ] ++
   section
     "Switching screens"
@@ -188,8 +260,7 @@ myKeys conf =
     , ("<XF86AudioMute>", "Mute", spawn "amixer -q set Master mute")
     ]
   where
-    section name keys =
-      subtitle name : mkNamedKeymap conf (map (\(a, b, c) -> (a, addName b c)) keys)
+    section name ks = subtitle name : mkNamedKeymap conf (map (\(a, b, c) -> (a, addName b c)) ks)
 
 displayKeyMap :: [((KeyMask, KeySym), NamedAction)] -> NamedAction
 displayKeyMap x =
@@ -201,6 +272,7 @@ displayKeyMap x =
     selectionMap = zip (filter (not . null) (showKm x)) (map fst x)
     toKeyBinding sel = fromMaybe (0, 0) $ lookup sel selectionMap
 
+myManageHook :: Query (Endo WindowSet)
 myManageHook =
   composeAll
     [ className =? "Zenity" --> doFloat
@@ -210,40 +282,59 @@ myManageHook =
     , resource =? "kdesktop" --> doIgnore
     ]
 
+base03 :: String
 base03 = "#002b36"
 
+base02 :: String
 base02 = "#073642"
 
+base01 :: String
 base01 = "#586e75"
 
+base00 :: String
 base00 = "#657b83"
 
+base0 :: String
 base0 = "#839496"
 
+base1 :: String
 base1 = "#93a1a1"
 
+base2 :: String
 base2 = "#eee8d5"
 
+base3 :: String
 base3 = "#fdf6e3"
 
+yellow :: String
 yellow = "#b58900"
 
+orange :: String
 orange = "#cb4b16"
 
+red :: String
 red = "#dc322f"
 
+magenta :: String
 magenta = "#d33682"
 
+violet :: String
 violet = "#6c71c4"
 
+blue :: String
 blue = "#268bd2"
 
+cyan :: String
 cyan = "#2aa198"
 
+green :: String
 green = "#859900"
 
+monoIcon :: String
 monoIcon = "\xe9e1"
 
+vertIcon :: String
 vertIcon = "\xe900"
 
+horizIcon :: String
 horizIcon = "\xea1b"
