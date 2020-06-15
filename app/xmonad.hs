@@ -1,11 +1,13 @@
 import qualified Colors.Solarized.Dark as Colors
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
+import Data.Monoid (All)
 import System.Exit (exitSuccess)
 import System.IO
 import XMonad
 import XMonad.Actions.CycleWS
 import XMonad.Actions.DynamicProjects
+import XMonad.Hooks.DynamicBars
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.FadeInactive
@@ -25,16 +27,15 @@ import XMonad.Util.SpawnOnce
 import XMonad.Util.WorkspaceCompare
 
 main :: IO ()
-main = do
-  proc <- spawnPipe "xmobar"
-  xmonad $ ewmh $ docks $ dynamicProjects projects $ myConfig proc
+main = xmonad $ ewmh $ docks $ dynamicProjects projects myConfig
   where
-    myConfig proc =
+    myConfig =
       addKeys $
       def
         { layoutHook = avoidStruts $ deco vert ||| mono ||| deco horiz
-        , logHook = myLogHook proc
+        , logHook = myLogHook
         , manageHook = myManageHook
+        , handleEventHook = myEventHook
         , startupHook = myStartupHook
         , terminal = "alacritty"
         , modMask = mod4Mask
@@ -134,23 +135,32 @@ myStartupHook = do
   spawnOnce "/home/david/.fehbg"
   spawnOnce "picom -f &"
   spawnOnce "qmenu_registrar &"
+  dynStatusBarStartup startXmobar killXmobar
   activateProject (head projects)
 
-myLogHook :: Handle -> X ()
-myLogHook proc =
-  fadeInactiveLogHook 0.9 <+> do
-    pp <- myXmobarPP proc
-    dynamicLogWithPP pp
+myEventHook :: Event -> X All
+myEventHook = dynStatusBarEventHook startXmobar killXmobar
 
-myXmobarPP :: Handle -> X PP
-myXmobarPP proc = do
+startXmobar :: ScreenId -> IO Handle
+startXmobar (S s) = spawnPipe $ "xmobar -x" ++ show s
+
+killXmobar :: IO ()
+killXmobar = return () -- xmobar seems to get cleaned up automatically
+
+myLogHook :: X ()
+myLogHook =
+  fadeInactiveLogHook 0.9 <+> do
+    pp <- myXmobarPP
+    multiPP pp pp
+
+myXmobarPP :: X PP
+myXmobarPP = do
   wsFormatter <- getWsFormatter
   return
     xmobarPP
-      { ppOutput = hPutStrLn proc
-      , ppTitle = xmobarColor Colors.cyan "" . shorten 50
+      { ppTitle = xmobarColor Colors.cyan "" . shorten 50
       , ppCurrent = xmobarColor Colors.yellow "" . wrap "[" "]" . wsFormatter
-      , ppVisible = ppVisible def . wsFormatter
+      , ppVisible = wrap "(" ")" . wsFormatter
       , ppVisibleNoWindows = flip (.) wsFormatter <$> ppVisibleNoWindows def
       , ppHidden = ppHidden def . wsFormatter
       , ppHiddenNoWindows = ppHiddenNoWindows def . wsFormatter
@@ -235,6 +245,13 @@ myKeys conf =
   section
     "Resizing windows"
     [ ("M-h", "Shrink main window", sendMessage Shrink)
+    , ("M-l", "Expand main window", sendMessage Expand)
+    , ("M-s", "Increase window gaps", incScreenWindowSpacing 5)
+    , ("M-S-s", "Decrease window gaps", decScreenWindowSpacing 5)
+    ] ++
+  section
+    "Status bar"
+    [ ("M-S-b", "Show/Hide the status bar", sendMessage ToggleStruts)
     , ("M-l", "Expand main window", sendMessage Expand)
     , ("M-s", "Increase window gaps", incScreenWindowSpacing 5)
     , ("M-S-s", "Decrease window gaps", decScreenWindowSpacing 5)
