@@ -1,6 +1,6 @@
+import qualified Colors.Solarized.Dark as Colors
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
-import Data.Semigroup
 import System.Exit (exitSuccess)
 import System.IO
 import XMonad
@@ -62,19 +62,19 @@ deco layout =
   renamed [CutWordsLeft 11] $ IfMaxAlt 1 layout (noFrillsDeco shrinkText topBarTheme layout)
 
 active :: String
-active = cyan
+active = Colors.cyan
 
 topBarTheme :: Theme
 topBarTheme =
   def
-    { inactiveBorderColor = base03
-    , inactiveColor = base03
-    , inactiveTextColor = base03
+    { inactiveBorderColor = Colors.background
+    , inactiveColor = Colors.background
+    , inactiveTextColor = Colors.background
     , activeBorderColor = active
     , activeColor = active
     , activeTextColor = active
-    , urgentBorderColor = red
-    , urgentTextColor = yellow
+    , urgentBorderColor = Colors.red
+    , urgentTextColor = Colors.yellow
     , decoHeight = 5
     }
 
@@ -82,28 +82,18 @@ promptConfig :: XMonad.Prompt.XPConfig
 promptConfig =
   def
     { font = "xft:Noto Sans:size=12"
-    , bgColor = base03
-    , fgColor = base0
-    , fgHLight = base03
-    , bgHLight = yellow
-    , borderColor = base02
-    , height = 24
+    , bgColor = Colors.background
+    , fgColor = Colors.text
+    , fgHLight = Colors.background
+    , bgHLight = Colors.yellow
+    , borderColor = Colors.backgroundHighlight
+    , height = 25
     }
 
 projects :: [Project]
 projects =
   [ Project
       {projectName = "Web", projectDirectory = "~/Downloads", projectStartHook = Just launchBrowser}
-  , Project
-      { projectName = "Xmo"
-      , projectDirectory = "~/projects/xmo"
-      , projectStartHook =
-          Just $ do
-            sendMessage NextLayout
-            runInTerm "" "stack build"
-            runInTerm "" "zsh -i -c vim"
-      }
-  , Project {projectName = "scratch", projectDirectory = "~/", projectStartHook = Nothing}
   , Project
       { projectName = "Comms"
       , projectDirectory = "~/"
@@ -112,7 +102,32 @@ projects =
             launchOutlook
             launchTeams
       }
+  , Project {projectName = "IM", projectDirectory = "~/", projectStartHook = Just launchSlack}
+  , Project {projectName = "Misc", projectDirectory = "~/", projectStartHook = Nothing}
+  , Project
+      { projectName = "QualComm"
+      , projectDirectory = "~/projects/qualcomm"
+      , projectStartHook = Nothing
+      }
+  , Project
+      { projectName = "Xmo"
+      , projectDirectory = "~/projects/xmo"
+      , projectStartHook = Just $ runInShell "stack build && vim"
+      }
   ]
+
+projectIconOrName :: String -> String
+projectIconOrName name =
+  fromMaybe name $
+  lookup
+    name
+    [ ("Web", "\xf0ac")
+    , ("Xmo", "\xe777")
+    , ("Misc", "\xf005")
+    , ("Comms", "\xf6ef")
+    , ("IM", "\xf9b0")
+    , ("QualComm", "QC")
+    ]
 
 myStartupHook :: X ()
 myStartupHook = do
@@ -123,29 +138,59 @@ myStartupHook = do
 
 myLogHook :: Handle -> X ()
 myLogHook proc =
-  fadeInactiveLogHook 0.9 <+>
-  dynamicLogWithPP
+  fadeInactiveLogHook 0.9 <+> do
+    pp <- myXmobarPP proc
+    dynamicLogWithPP pp
+
+myXmobarPP :: Handle -> X PP
+myXmobarPP proc = do
+  wsFormatter <- getWsFormatter
+  return
     xmobarPP
       { ppOutput = hPutStrLn proc
-      , ppTitle = xmobarColor cyan "" . shorten 50
-      , ppCurrent = xmobarColor yellow "" . wrap "[" "]"
+      , ppTitle = xmobarColor Colors.cyan "" . shorten 50
+      , ppCurrent = xmobarColor Colors.yellow "" . wrap "[" "]" . wsFormatter
+      , ppVisible = ppVisible def . wsFormatter
+      , ppVisibleNoWindows = flip (.) wsFormatter <$> ppVisibleNoWindows def
+      , ppHidden = ppHidden def . wsFormatter
+      , ppHiddenNoWindows = ppHiddenNoWindows def . wsFormatter
       , ppSep = "  "
       , ppLayout = \s -> " <fn=1>" ++ s ++ "</fn>"
       , ppOrder = \(ws:l:t:_) -> [l, ws, t]
       , ppSort = mkWsSort getWsCompare
       }
+  where
+    getWsFormatter = formatWs <$> getWsIndex
+    formatWs index ws = (formatIndex . index) ws ++ projectIconOrName ws
+    formatIndex = maybe "" (show . (+ 1))
 
 launchBrowser :: X ()
 launchBrowser = spawn "brave"
+
+launchVim :: X ()
+launchVim = runInShell "vim"
+
+launchFileManager :: X ()
+launchFileManager = runInShell "ra"
+
+-- Run a command in the shell, keep shell running after command terminates
+-- (assumes that shell initialisation ends with the line 'eval "$RUN"')
+runInShell :: String -> X ()
+runInShell cmd = do
+  term <- asks (terminal . config)
+  spawn $ "RUN='" ++ cmd ++ "' " ++ term
 
 launchEvernote :: X ()
 launchEvernote = spawn "chromium --app=http://www.evernote.com/Home.action"
 
 launchOutlook :: X ()
-launchOutlook = spawn "chromium --app=https://outlook.office.com/mail/inbox"
+launchOutlook = spawn "chromium --app=https://outlook.office.com/mail/ivnbox"
 
 launchTeams :: X ()
 launchTeams = spawn "chromium --app=https://teams.microsoft.com/_#/calendarv2"
+
+launchSlack :: X ()
+launchSlack = spawn "slack"
 
 addKeys :: XConfig a -> XConfig a
 addKeys conf = addDescrKeys' ((modMask conf, xK_b), displayKeyMap) myKeys conf
@@ -165,6 +210,8 @@ myKeys conf =
     [ ("M-n", "Launch Evernote", launchEvernote)
     , ("M-o", "Launch Outlook", launchOutlook)
     , ("M-S-o", "Launch Teams", launchTeams)
+    , ("M-f", "Launch File Manager", launchFileManager)
+    , ("M-v", "Launch Vim", launchVim)
     ] ++
   section
     "Changing layouts"
@@ -272,7 +319,7 @@ displayKeyMap x =
     selectionMap = zip (filter (not . null) (showKm x)) (map fst x)
     toKeyBinding sel = fromMaybe (0, 0) $ lookup sel selectionMap
 
-myManageHook :: Query (Endo WindowSet)
+myManageHook :: ManageHook
 myManageHook =
   composeAll
     [ className =? "Zenity" --> doFloat
@@ -281,54 +328,6 @@ myManageHook =
     , resource =? "desktop_window" --> doIgnore
     , resource =? "kdesktop" --> doIgnore
     ]
-
-base03 :: String
-base03 = "#002b36"
-
-base02 :: String
-base02 = "#073642"
-
-base01 :: String
-base01 = "#586e75"
-
-base00 :: String
-base00 = "#657b83"
-
-base0 :: String
-base0 = "#839496"
-
-base1 :: String
-base1 = "#93a1a1"
-
-base2 :: String
-base2 = "#eee8d5"
-
-base3 :: String
-base3 = "#fdf6e3"
-
-yellow :: String
-yellow = "#b58900"
-
-orange :: String
-orange = "#cb4b16"
-
-red :: String
-red = "#dc322f"
-
-magenta :: String
-magenta = "#d33682"
-
-violet :: String
-violet = "#6c71c4"
-
-blue :: String
-blue = "#268bd2"
-
-cyan :: String
-cyan = "#2aa198"
-
-green :: String
-green = "#859900"
 
 monoIcon :: String
 monoIcon = "\xe9e1"

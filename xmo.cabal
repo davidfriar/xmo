@@ -25,11 +25,15 @@ source-repository head
 
 library
   exposed-modules:
+      Colors.Solarized.Base
+      Colors.Solarized.Dark
+      Colors.Solarized.Light
       XMonad.Layout.IfMaxAlt
   other-modules:
       Paths_xmo
   hs-source-dirs:
       src
+  ghc-options: -Wall
   build-depends:
       base >=4.7 && <5
     , containers
