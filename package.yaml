@@ -25,6 +25,7 @@ dependencies:
 - unix
 - xmonad
 - xmonad-contrib
+- xmobar
 
 library:
   source-dirs: src
@@ -42,14 +43,14 @@ executables:
     - -Wall
     dependencies:
     - xmo
-
-tests:
-  xmo-test:
-    main:                Spec.hs
-    source-dirs:         test
+  xmobar:
+    main:                xmobar.hs
+    source-dirs:         bar
     ghc-options:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -Wall
     dependencies:
     - xmo
+

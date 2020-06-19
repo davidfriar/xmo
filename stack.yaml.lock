@@ -3,7 +3,28 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: xmobar-0.34@sha256:6022fc7678d668826eaa248acf8d8f3e1e3bb1a5f9469cbcbf341002ccb6e307,11617
+    pantry-tree:
+      size: 6270
+      sha256: 8a6f9dacffd9faf1c090a9d91d3f8e9f2e155ac797a9117fc03bb27e215fe68f
+  original:
+    hackage: xmobar-0.34
+- completed:
+    hackage: iwlib-0.1.0@sha256:226e4582d6878166a172ff98c868e25c4ed478ab28ab493498e464b1fe19d39a,921
+    pantry-tree:
+      size: 259
+      sha256: f867a93991b791adf4c65bb91f385effee7e18bd78d8e0a61fd03f42f6073705
+  original:
+    hackage: iwlib-0.1.0@sha256:226e4582d6878166a172ff98c868e25c4ed478ab28ab493498e464b1fe19d39a,921
+- completed:
+    hackage: timezone-olson-0.1.9@sha256:012a4c60825907c5cb1d6be6a270cf8e0d9250afe9f3ca36880907038d3b8874,2278
+    pantry-tree:
+      size: 634
+      sha256: 5f5b0e24b531cde5be969a98244efca274ccb48e40a177e237f406559e734ec6
+  original:
+    hackage: timezone-olson-0.1.9@sha256:012a4c60825907c5cb1d6be6a270cf8e0d9250afe9f3ca36880907038d3b8874,2278
 snapshots:
 - completed:
     size: 496120

@@ -1,0 +1,2 @@
+stack install --local-bin-path /home/david/projects/xmo/bar xmo:xmobar
+

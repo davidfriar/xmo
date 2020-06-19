@@ -142,8 +142,11 @@ myEventHook :: Event -> X All
 myEventHook = dynStatusBarEventHook startXmobar killXmobar
 
 startXmobar :: ScreenId -> IO Handle
-startXmobar (S s) = spawnPipe $ "xmobar -x" ++ show s
+startXmobar (S s) = spawnPipe $ "/home/david/.local/bin/xmobar -x " ++ show s
 
+-- would need to run setcap in the build script to make wifi work... and also for
+-- some reason weather.sh not working when xmobar self-compiling
+-- startXmobar (S s) = spawnPipe $ "xmobar -x " ++ show s ++ " /home/david/projects/xmo/bar/xmobar.hs"
 killXmobar :: IO ()
 killXmobar = return () -- xmobar seems to get cleaned up automatically
 

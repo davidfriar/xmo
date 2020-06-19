@@ -40,9 +40,18 @@ packages:
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
 #
 # extra-deps: []
+extra-deps:
+- xmobar-0.34
+- iwlib-0.1.0@sha256:226e4582d6878166a172ff98c868e25c4ed478ab28ab493498e464b1fe19d39a,921
+- timezone-olson-0.1.9@sha256:012a4c60825907c5cb1d6be6a270cf8e0d9250afe9f3ca36880907038d3b8874,2278
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
+flags:
+ xmobar:
+   all_extensions: true
+   with_iwlib: true
+   with_alsa: true
 
 # Extra package databases containing global packages
 # extra-package-dbs: []
