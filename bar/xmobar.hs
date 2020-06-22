@@ -1,9 +1,18 @@
 import qualified Colors.Solarized.Dark as Colors
+import System.Environment (getArgs)
 import Text.Printf (printf)
 import Xmobar
 
 main :: IO ()
-main = xmobar config
+main = do
+  screen <- getScreen
+  xmobar config {position = OnScreen screen $ position config}
+
+getScreen :: IO Int
+getScreen = scr <$> getArgs
+  where
+    scr ["-x", s] = read s
+    scr _ = 0
 
 config :: Config
 config =
