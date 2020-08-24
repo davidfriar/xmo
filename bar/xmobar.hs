@@ -1,4 +1,4 @@
-import qualified Colors.Solarized.Dark as Colors
+import qualified Colors.Gruvbox.Dark as Colors
 import System.Environment (getArgs)
 import Text.Printf (printf)
 import Xmobar
@@ -86,9 +86,9 @@ config =
             (args [("-t", "<status> <volumebar>"), ("-f", "◦"), ("-b", " "), ("-W", "10")] ++
              ["--"] ++
              args
-               [ ("-o", icon (SPKR ON))
+               [ ("-O", icon (SPKR ON))
                , ("-c", Colors.text)
-               , ("-O", icon (SPKR OFF))
+               , ("-o", icon (SPKR OFF))
                , ("-C", Colors.text)
                ])
             10
@@ -110,7 +110,7 @@ myTemplate = mkTemplate left middle right
         , button "disku" (runInTerm False "ncdu")
         , button "battery" (runInTerm False "/home/david/bin/powertop.sh")
         , button "wlp3s0wi" (runInTerm False "networkmanager_dmenu")
-        , button "default:Master" (runInTerm False "alsamixer")
+        , button "default:Master" "pavucontrol"
         ]
     right = colored Colors.yellow (item "date") ++ button "weather" (runInTerm True "wego -f emoji")
 

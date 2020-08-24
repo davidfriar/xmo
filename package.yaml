@@ -33,7 +33,7 @@ library:
     - -Wall
 
 executables:
-  xmo-exe:
+  xmonad:
     main:                xmonad.hs
     source-dirs:         app
     ghc-options:

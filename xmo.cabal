@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.1.
+-- This file has been generated from package.yaml by hpack version 0.34.2.
 --
 -- see: https://github.com/sol/hpack
 
@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      Colors.Gruvbox.Dark
       Colors.Solarized.Base
       Colors.Solarized.Dark
       Colors.Solarized.Light
@@ -43,12 +44,12 @@ library
     , xmonad-contrib
   default-language: Haskell2010
 
-executable xmo-exe
-  main-is: xmonad.hs
+executable xmobar
+  main-is: xmobar.hs
   other-modules:
       Paths_xmo
   hs-source-dirs:
-      app
+      bar
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
       base >=4.7 && <5
@@ -60,12 +61,12 @@ executable xmo-exe
     , xmonad-contrib
   default-language: Haskell2010
 
-executable xmobar
-  main-is: xmobar.hs
+executable xmonad
+  main-is: xmonad.hs
   other-modules:
       Paths_xmo
   hs-source-dirs:
-      bar
+      app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
       base >=4.7 && <5

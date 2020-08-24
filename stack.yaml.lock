@@ -25,6 +25,20 @@ packages:
       sha256: 5f5b0e24b531cde5be969a98244efca274ccb48e40a177e237f406559e734ec6
   original:
     hackage: timezone-olson-0.1.9@sha256:012a4c60825907c5cb1d6be6a270cf8e0d9250afe9f3ca36880907038d3b8874,2278
+- completed:
+    hackage: pretty-simple-3.2.3.0@sha256:7d054c500d2918e6c7723f29b9d212d27359dbd231d7eeca1900d60042e9a16f,4137
+    pantry-tree:
+      size: 1406
+      sha256: 7ee6639e988993d0b48b8f83160072c9cd9d945ef33691b0a0fd52b0aa04cd06
+  original:
+    hackage: pretty-simple-3.2.3.0
+- completed:
+    hackage: pretty-show-1.10@sha256:bfef8da0ac4db4fc7f41edfec9e9a701ac206418d70702bff1e40f20d6a2b1f1,1888
+    pantry-tree:
+      size: 735
+      sha256: ae0986a1537a5f462fd48787f82931a07ab8b569631cf08e6cff19c2d9e3866b
+  original:
+    hackage: pretty-show-1.10
 snapshots:
 - completed:
     size: 496120

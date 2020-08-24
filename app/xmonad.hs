@@ -1,4 +1,4 @@
-import qualified Colors.Solarized.Dark as Colors
+import qualified Colors.Gruvbox.Dark as Colors
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
 import Data.Monoid (All)
@@ -63,7 +63,7 @@ deco layout =
   renamed [CutWordsLeft 11] $ IfMaxAlt 1 layout (noFrillsDeco shrinkText topBarTheme layout)
 
 active :: String
-active = Colors.cyan
+active = Colors.blue
 
 topBarTheme :: Theme
 topBarTheme =
@@ -75,7 +75,7 @@ topBarTheme =
     , activeColor = active
     , activeTextColor = active
     , urgentBorderColor = Colors.red
-    , urgentTextColor = Colors.yellow
+    , urgentTextColor = Colors.orange
     , decoHeight = 5
     }
 
@@ -114,6 +114,14 @@ projects =
       { projectName = "Xmo"
       , projectDirectory = "~/projects/xmo"
       , projectStartHook = Just $ runInShell "stack build && vim"
+      }
+  , Project
+      { projectName = "Diag"
+      , projectDirectory = "~/projects/diag"
+      , projectStartHook =
+          Just $ do
+            runInShell "./run.sh"
+            launchVim
       }
   ]
 
@@ -183,8 +191,20 @@ launchBrowser = spawn "brave"
 launchVim :: X ()
 launchVim = runInShell "vim"
 
+launchVimWiki :: X ()
+launchVimWiki = runInShell "vim -c VimwikiIndex"
+
 launchFileManager :: X ()
 launchFileManager = runInShell "ra"
+
+copyScreenshot :: X ()
+copyScreenshot = spawn "import png:- | xclip -selection clipboard -t image/png"
+
+guiScreenshot :: X ()
+guiScreenshot = spawn "flameshot gui"
+
+guiScreenshotWithDelay :: X ()
+guiScreenshotWithDelay = spawn "flameshot gui -d 3000"
 
 -- Run a command in the shell, keep shell running after command terminates
 -- (assumes that shell initialisation ends with the line 'eval "$RUN"')
@@ -193,14 +213,17 @@ runInShell cmd = do
   term <- asks (terminal . config)
   spawn $ "RUN='" ++ cmd ++ "' " ++ term
 
+launchSiteAsApp :: String -> X ()
+launchSiteAsApp url = spawn $ "brave --app=" ++ url
+
 launchEvernote :: X ()
-launchEvernote = spawn "chromium --app=http://www.evernote.com/Home.action"
+launchEvernote = launchSiteAsApp "http://www.evernote.com/Home.action"
 
 launchOutlook :: X ()
-launchOutlook = spawn "chromium --app=https://outlook.office.com/mail/ivnbox"
+launchOutlook = launchSiteAsApp "https://outlook.office.com/mail/ivnbox"
 
 launchTeams :: X ()
-launchTeams = spawn "chromium --app=https://teams.microsoft.com/_#/calendarv2"
+launchTeams = launchSiteAsApp "https://teams.microsoft.com/_#/calendarv2"
 
 launchSlack :: X ()
 launchSlack = spawn "slack"
@@ -225,6 +248,10 @@ myKeys conf =
     , ("M-S-o", "Launch Teams", launchTeams)
     , ("M-f", "Launch File Manager", launchFileManager)
     , ("M-v", "Launch Vim", launchVim)
+    , ("M-S-v", "Launch VimWiki", launchVimWiki)
+    , ("M-;", "Copy screenshot to clipboard", copyScreenshot)
+    , ("M-S-;", "Launch screenshot app", guiScreenshot)
+    , ("M-C-S-;", "Launch screenshot app with delay", guiScreenshotWithDelay)
     ] ++
   section
     "Changing layouts"
