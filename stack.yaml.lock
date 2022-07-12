@@ -5,43 +5,43 @@
 
 packages:
 - completed:
-    hackage: xmobar-0.34@sha256:6022fc7678d668826eaa248acf8d8f3e1e3bb1a5f9469cbcbf341002ccb6e307,11617
     pantry-tree:
-      size: 6270
-      sha256: 8a6f9dacffd9faf1c090a9d91d3f8e9f2e155ac797a9117fc03bb27e215fe68f
+      sha256: 96125af352c8aac38b2dabf54da959b6a9af5fac817ac8f386a844465ae00aff
+      size: 9344
+    hackage: xmobar-0.44@sha256:4536aed76a7de5a0b8f1f054c81a878a21fe17f3a8a587209aa430e86f396eaa,14754
   original:
-    hackage: xmobar-0.34
+    hackage: xmobar-0.44
 - completed:
-    hackage: iwlib-0.1.0@sha256:226e4582d6878166a172ff98c868e25c4ed478ab28ab493498e464b1fe19d39a,921
     pantry-tree:
-      size: 259
       sha256: f867a93991b791adf4c65bb91f385effee7e18bd78d8e0a61fd03f42f6073705
-  original:
+      size: 259
     hackage: iwlib-0.1.0@sha256:226e4582d6878166a172ff98c868e25c4ed478ab28ab493498e464b1fe19d39a,921
-- completed:
-    hackage: timezone-olson-0.1.9@sha256:012a4c60825907c5cb1d6be6a270cf8e0d9250afe9f3ca36880907038d3b8874,2278
-    pantry-tree:
-      size: 634
-      sha256: 5f5b0e24b531cde5be969a98244efca274ccb48e40a177e237f406559e734ec6
   original:
-    hackage: timezone-olson-0.1.9@sha256:012a4c60825907c5cb1d6be6a270cf8e0d9250afe9f3ca36880907038d3b8874,2278
+    hackage: iwlib-0.1.0
 - completed:
-    hackage: pretty-simple-3.2.3.0@sha256:7d054c500d2918e6c7723f29b9d212d27359dbd231d7eeca1900d60042e9a16f,4137
     pantry-tree:
-      size: 1406
+      sha256: f828d9bb80b8cc27aa03faa2e9830d803fc27c9f41428f905e36d97d320eccbc
+      size: 634
+    hackage: timezone-olson-0.2.1@sha256:7b26c1b749bb489dde2d4bb62d8f940d2f2cddc4adfa1fc70a15d48efcf610de,2295
+  original:
+    hackage: timezone-olson-0.2.1
+- completed:
+    pantry-tree:
       sha256: 7ee6639e988993d0b48b8f83160072c9cd9d945ef33691b0a0fd52b0aa04cd06
+      size: 1406
+    hackage: pretty-simple-3.2.3.0@sha256:7d054c500d2918e6c7723f29b9d212d27359dbd231d7eeca1900d60042e9a16f,4137
   original:
     hackage: pretty-simple-3.2.3.0
 - completed:
-    hackage: pretty-show-1.10@sha256:bfef8da0ac4db4fc7f41edfec9e9a701ac206418d70702bff1e40f20d6a2b1f1,1888
     pantry-tree:
-      size: 735
       sha256: ae0986a1537a5f462fd48787f82931a07ab8b569631cf08e6cff19c2d9e3866b
+      size: 735
+    hackage: pretty-show-1.10@sha256:bfef8da0ac4db4fc7f41edfec9e9a701ac206418d70702bff1e40f20d6a2b1f1,1888
   original:
     hackage: pretty-show-1.10
 snapshots:
 - completed:
-    size: 496120
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/15/16.yaml
-    sha256: cf30623a2c147f51eecc8f9d6440f5d1b671af21380505e633faff32b565f3d5
-  original: lts-15.16
+    sha256: 005f204647467d65c4ab549a5ca35d54b3d90a84a99a4ffc5d421a4018854fe2
+    size: 618509
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/19/10.yaml
+  original: lts-19.10

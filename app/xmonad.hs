@@ -9,30 +9,46 @@ import XMonad.Actions.CycleWS
 import XMonad.Actions.DynamicProjects
 import XMonad.Hooks.DynamicBars
 import XMonad.Hooks.DynamicLog
+import XMonad.Hooks.DynamicProperty
 import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.FadeInactive
 import XMonad.Hooks.ManageDocks
+import XMonad.Hooks.SetWMName
 import XMonad.Layout.Decoration
 import XMonad.Layout.IfMaxAlt
+import XMonad.Layout.MultiToggle
 import XMonad.Layout.NoFrillsDecoration
+
+import XMonad.Layout.PerScreenModifier
+import XMonad.Layout.Reflect
 import XMonad.Layout.Renamed
 import XMonad.Layout.Spacing
 import XMonad.Prompt
+import XMonad.Prompt.ConfirmPrompt
 import qualified XMonad.StackSet as W
 import XMonad.Util.Dmenu
 import XMonad.Util.EZConfig
 import XMonad.Util.NamedActions
+import XMonad.Util.NamedScratchpad
+  ( NamedScratchpad(NS)
+  , NamedScratchpads
+  , customFloating
+  , namedScratchpadAction
+  , namedScratchpadManageHook
+  )
 import XMonad.Util.Run
 import XMonad.Util.SpawnOnce
 import XMonad.Util.WorkspaceCompare
 
 main :: IO ()
-main = xmonad $ ewmh $ docks $ dynamicProjects projects myConfig
+main = xmonad $ ewmhFullscreen . ewmh $ docks $ dynamicProjects projects myConfig
   where
     myConfig =
       addKeys $
       def
-        { layoutHook = avoidStruts $ deco vert ||| mono ||| deco horiz
+        { layoutHook =
+            forScreen 0 reflectHoriz $
+            avoidStruts $ mkToggle (single REFLECTX) $ deco vert ||| mono ||| deco horiz
         , logHook = myLogHook
         , manageHook = myManageHook
         , handleEventHook = myEventHook
@@ -53,7 +69,7 @@ vert :: ModifiedLayout Rename (ModifiedLayout Spacing Tall) a
 vert = renamed [Replace vertIcon] $ mySpacing $ Tall 1 (3 / 100) 0.65
 
 horiz :: ModifiedLayout Rename (ModifiedLayout Spacing (Mirror Tall)) a
-horiz = renamed [Replace horizIcon] $ mySpacing $ Mirror (Tall 1 (3 / 100) 0.65)
+horiz = renamed [Replace horizIcon] $ mySpacing $ Mirror (Tall 2 (3 / 100) 0.65)
 
 deco ::
      Eq a
@@ -91,37 +107,24 @@ promptConfig =
     , height = 25
     }
 
+exitPromptConfig :: XMonad.Prompt.XPConfig
+exitPromptConfig = promptConfig {bgColor = Colors.yellow}
+
 projects :: [Project]
 projects =
   [ Project
       {projectName = "Web", projectDirectory = "~/Downloads", projectStartHook = Just launchBrowser}
-  , Project
-      { projectName = "Comms"
-      , projectDirectory = "~/"
-      , projectStartHook =
-          Just $ do
-            launchOutlook
-            launchTeams
-      }
-  , Project {projectName = "IM", projectDirectory = "~/", projectStartHook = Just launchSlack}
-  , Project {projectName = "Misc", projectDirectory = "~/", projectStartHook = Nothing}
-  , Project
-      { projectName = "QualComm"
-      , projectDirectory = "~/projects/qualcomm"
-      , projectStartHook = Nothing
-      }
+  , Project {projectName = "Mail", projectDirectory = "~/", projectStartHook = Just launchOutlook}
+  , Project {projectName = "Slack", projectDirectory = "~/", projectStartHook = Just launchSlack}
+  , Project {projectName = "Teams", projectDirectory = "~/", projectStartHook = Just launchTeams}
+  , Project {projectName = "Misc1", projectDirectory = "~/", projectStartHook = Nothing}
+  , Project {projectName = "Misc2", projectDirectory = "~/", projectStartHook = Nothing}
+  , Project {projectName = "Misc3", projectDirectory = "~/", projectStartHook = Nothing}
+  , Project {projectName = "Misc4", projectDirectory = "~/", projectStartHook = Nothing}
   , Project
       { projectName = "Xmo"
       , projectDirectory = "~/projects/xmo"
       , projectStartHook = Just $ runInShell "stack build && vim"
-      }
-  , Project
-      { projectName = "Diag"
-      , projectDirectory = "~/projects/diag"
-      , projectStartHook =
-          Just $ do
-            runInShell "./run.sh"
-            launchVim
       }
   ]
 
@@ -132,22 +135,48 @@ projectIconOrName name =
     name
     [ ("Web", "\xf0ac")
     , ("Xmo", "\xe777")
-    , ("Misc", "\xf005")
-    , ("Comms", "\xf6ef")
-    , ("IM", "\xf9b0")
-    , ("QualComm", "QC")
+    , ("Misc1", "\xf005")
+    , ("Misc2", "\xf005")
+    , ("Misc3", "\xf005")
+    , ("Misc4", "\xf005")
+    , ("Mail", "\xf6ef")
+    , ("Slack", "\xf9b0")
+    , ("Teams", "\xf871")
     ]
+
+centeredFloating :: ManageHook
+centeredFloating = customFloating $ W.RationalRect (1 / 20) (1 / 20) (9 / 10) (9 / 10)
+
+scratchpads :: NamedScratchpads
+scratchpads =
+  [ NS
+      "term"
+      "zsh -c '/home/david/.local/bin/scratchpad.sh'"
+      (title =? "scratchpad")
+      centeredFloating
+  , NS "spotify" "spotify" (className =? "Spotify") centeredFloating
+  -- , NS
+  --     "calendar"
+  --     "brave --app=https://teams.microsoft.com/_#/calendarv2"
+  --     (appName =? "teams.microsoft.com" <&&> className =? "Brave-browser")
+  --     centeredFloating
+  ]
 
 myStartupHook :: X ()
 myStartupHook = do
+  setWMName "LG3D" -- fixes Java, which doesn't whitelist XMonad
   spawnOnce "/home/david/.fehbg"
+  spawnOnce "/home/david/.screenlayout/default.sh"
   spawnOnce "picom -f &"
   spawnOnce "qmenu_registrar &"
   dynStatusBarStartup startXmobar killXmobar
   activateProject (head projects)
 
 myEventHook :: Event -> X All
-myEventHook = dynStatusBarEventHook startXmobar killXmobar
+myEventHook =
+  dynStatusBarEventHook startXmobar killXmobar <+>
+  -- fullscreenEventHook <+>
+  dynamicPropertyChange "WM_NAME" (className =? "Spotify" --> centeredFloating)
 
 startXmobar :: ScreenId -> IO Handle
 startXmobar (S s) = spawnPipe $ "/home/david/.local/bin/xmobar -x " ++ show s
@@ -195,38 +224,69 @@ launchVimWiki :: X ()
 launchVimWiki = runInShell "vim -c VimwikiIndex"
 
 launchFileManager :: X ()
-launchFileManager = runInShell "ra"
+launchFileManager = runInShell "fm"
 
-copyScreenshot :: X ()
-copyScreenshot = spawn "import png:- | xclip -selection clipboard -t image/png"
+screenshotRect :: X ()
+screenshotRect = spawn "ksnip -r"
 
-guiScreenshot :: X ()
-guiScreenshot = spawn "flameshot gui"
+screenshotWindow :: X ()
+screenshotWindow = spawn "ksnip -a"
 
-guiScreenshotWithDelay :: X ()
-guiScreenshotWithDelay = spawn "flameshot gui -d 3000"
+launchScreenshotApp :: X ()
+launchScreenshotApp = spawn "ksnip"
 
--- Run a command in the shell, keep shell running after command terminates
+launchClipmenu :: X ()
+launchClipmenu = spawn "CM_LAUNCHER=rofi clipmenu"
+
+-- run a command in the shell, keep shell running after command terminates
 -- (assumes that shell initialisation ends with the line 'eval "$RUN"')
 runInShell :: String -> X ()
 runInShell cmd = do
   term <- asks (terminal . config)
-  spawn $ "RUN='" ++ cmd ++ "' " ++ term
+  spawn $ "POWERLEVEL9K_INSTANT_PROMPT=off RUN='" ++ cmd ++ "' " ++ term
 
 launchSiteAsApp :: String -> X ()
 launchSiteAsApp url = spawn $ "brave --app=" ++ url
 
+-- launchSiteAsApp url = spawn $ "chromium --app=" ++ url
 launchEvernote :: X ()
 launchEvernote = launchSiteAsApp "http://www.evernote.com/Home.action"
 
 launchOutlook :: X ()
-launchOutlook = launchSiteAsApp "https://outlook.office.com/mail/ivnbox"
+launchOutlook = launchSiteAsApp "https://outlook.office.com/mail/inbox"
+
+launchCalendar :: X ()
+launchCalendar = launchSiteAsApp "https://teams.microsoft.com/_#/calendarv2"
 
 launchTeams :: X ()
-launchTeams = launchSiteAsApp "https://teams.microsoft.com/_#/calendarv2"
+launchTeams = launchSiteAsApp "https://teams.microsoft.com/"
 
+-- launchTeams = spawn "teams"
 launchSlack :: X ()
 launchSlack = spawn "slack"
+
+editConfigMenu :: X ()
+editConfigMenu =
+  editFileMenu
+    [ ("Vim", "~/.vimrc")
+    , ("Alacritty", "~/.config/alacritty/alacritty.yml")
+    , ("Zsh", "~/.zshrc")
+    , ("Picom", "~/.config/picom/picom.conf")
+    , ("Rofi", "~/.config/rofi/theme.rasi")
+    , ("Vifm", "~/.config/vifm/vifmrc")
+    , ("SurfingKeys", "~/.config/.surfingkeys.js")
+    , ("Xmonad", "~/projects/xmo/app/xmonad.hs")
+    ]
+
+edit :: String -> X ()
+edit file = runInShell $ "vim " ++ file
+
+editFileMenu :: [(String, String)] -> X ()
+editFileMenu files = do
+  file <- dmenuMap (M.fromList files)
+  case file of
+    Nothing -> return ()
+    (Just f) -> edit f
 
 addKeys :: XConfig a -> XConfig a
 addKeys conf = addDescrKeys' ((modMask conf, xK_b), displayKeyMap) myKeys conf
@@ -236,6 +296,7 @@ myKeys conf =
   section
     "Launching and killing"
     [ ("M-S-<Return>", "Launch Terminal", spawn $ XMonad.terminal conf)
+    , ("M-C-<Return>", "Launch Terminal scratchpad", namedScratchpadAction scratchpads "term")
     , ("M-S-c", "Close the focused window", kill)
     , ("M-p", "Application launch menu", spawn "rofi -show drun")
     , ("M-S-p", "List running applications", spawn "rofi -show window")
@@ -249,14 +310,18 @@ myKeys conf =
     , ("M-f", "Launch File Manager", launchFileManager)
     , ("M-v", "Launch Vim", launchVim)
     , ("M-S-v", "Launch VimWiki", launchVimWiki)
-    , ("M-;", "Copy screenshot to clipboard", copyScreenshot)
-    , ("M-S-;", "Launch screenshot app", guiScreenshot)
-    , ("M-C-S-;", "Launch screenshot app with delay", guiScreenshotWithDelay)
+    , ("M-;", "Screenshot rectangle", screenshotRect)
+    , ("M-S-;", "Screenshot active window", screenshotWindow)
+    , ("M-C-S-;", "Launch screenshot app", launchScreenshotApp)
+    , ("M-z", "Launch spotify scratchpad", namedScratchpadAction scratchpads "spotify")
+    , ("M-c", "Launch clipmenu", launchClipmenu)
+    , ("M-i", "Choose config to edit", editConfigMenu)
     ] ++
   section
     "Changing layouts"
     [ ("M-<Space>", "Next Layout", sendMessage NextLayout)
     , ("M-S-<Space>", "Reset the layout", setLayout $ XMonad.layoutHook conf)
+    , ("M-C-<Space>", "Flip layout horizontally", sendMessage $ Toggle REFLECTX)
     , ("M-n", "Refresh", refresh)
     ] ++
   section
@@ -296,9 +361,9 @@ myKeys conf =
     ] ++
   section
     "Quit, or restart"
-    [ ("M-S-q", "Quit", io exitSuccess)
+    [ ("M-S-q", "Quit", confirmPrompt exitPromptConfig "exit" $ io exitSuccess)
     , ("M-q", "Restart", spawn "xmonad --recompile && xmonad --restart")
-    , ("M-<Backspace>", "System shutdown menu", spawn "/home/david/bin/shutdownmenu.sh")
+    , ("M-<Backspace>", "System shutdown menu", spawn "/home/david/.local/bin/shutdownmenu.sh")
     , ("M-S-z", "Lock", spawn "i3lock-fancy")
     ] ++
   section
@@ -336,7 +401,7 @@ myKeys conf =
     ] ++
   section
     "Wallpaper"
-    [ ("M-'", "New random wallpaper", spawn "/home/david/bin/random-wallpaper.sh")
+    [ ("M-'", "New random wallpaper", spawn "/home/david/.local/bin/random-wallpaper.sh")
     , ( "M-C-'"
       , "Save current wallpaper"
       , spawn "cp --backup=t /home/david/.wallpaper /home/david/.wallpapers")
@@ -345,7 +410,8 @@ myKeys conf =
       , spawn "feh --bg-scale --randomize /home/david/.wallpapers/")
     , ( "M-C-S-'"
       , "Select and manage wallpaper"
-      , spawn "feh --action ';feh --bg-scale %f' /home/david/.wallpapers/")
+      , spawn
+          "feh --action ';feh --bg-scale %f && cp %f /home/david/.wallpaper' /home/david/.wallpapers/")
     ] ++
   section
     "Audio"
@@ -372,9 +438,11 @@ myManageHook =
     [ className =? "Zenity" --> doFloat
     , className =? "Yad" --> doFloat
     , className =? "Gimp" --> doFloat
+    , title =? "Microsoft Teams Notification" --> doFloat
     , resource =? "desktop_window" --> doIgnore
     , resource =? "kdesktop" --> doIgnore
-    ]
+    ] <+>
+  namedScratchpadManageHook scratchpads
 
 monoIcon :: String
 monoIcon = "\xe9e1"

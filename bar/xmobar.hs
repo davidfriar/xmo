@@ -36,38 +36,13 @@ config =
                ])
             100
         , Run $ Memory ["-t", icon MEM ++ "<usedratio>%"] 100
-        , Run $ Date "%H:%M %A %e %B" "date" 600
+        , Run $ Date "%H:%M %A%e %B" "date" 600
         , Run StdinReader
-        , Run $
-          Battery
-            (args
-               [ ("-t", "<acstatus> <leftbar>")
-               , ("-L", "10")
-               , ("-H", "80")
-               , ("-p", "3")
-               , ("-f", "◦")
-               , ("-b", " ")
-               , ("-W", "5")
-               ] ++
-             ["--"] ++
-             args
-               [ ("-O", icon (BATT ON))
-               , ("-i", icon (BATT ON))
-               , ("-o", icon (BATT OFF))
-               , ("-L", "-15")
-               , ("-H", "-5")
-               , ("-l", Colors.red)
-               , ("-m", Colors.yellow)
-               , ("-h", Colors.green)
-               , ("-a", "notify-send -u critical 'Battery running out!!'")
-               , ("-A", "3")
-               ])
-            100
-        , Run $
-          Wireless
-            "wlp3s0"
-            (args [("-t", icon WIFI ++ " <qualitybar>"), ("-f", "◦"), ("-b", " "), ("-W", "5")])
-            10
+        -- , Run $
+        --   Wireless
+        --     "wlo1"
+        --     (args [("-t", icon WIFI ++ " <qualitybar>"), ("-f", "◦"), ("-b", " "), ("-W", "5")])
+        --     10
         , Run $
           CoreTemp
             (args
@@ -93,7 +68,7 @@ config =
                ])
             10
         , Run $ DiskU [("/", icon DISK ++ "<used>")] [] 600
-        , Run $ Com "/home/david/bin/weather.sh" [] "weather" 10
+        , Run $ Com "/home/david/.local/bin/weather.sh" [] "weather" 3000
         ]
     , template = myTemplate
     }
@@ -104,12 +79,11 @@ myTemplate = mkTemplate left middle right
     left = item "StdinReader"
     middle =
       concat
-        [ button "cpu" (runInTerm False "htop")
-        , button "coretemp" (runInTerm False "gotop -c solarized")
+        [ button "cpu" (runInTerm False "gotop -l mylayout")
+        , button "coretemp" (runInTerm False "bashtop")
         , button "memory" (runInTerm False "free -h -s 60")
         , button "disku" (runInTerm False "ncdu")
-        , button "battery" (runInTerm False "/home/david/bin/powertop.sh")
-        , button "wlp3s0wi" (runInTerm False "networkmanager_dmenu")
+        -- , button "wlo1" (runInTerm False "networkmanager_dmenu")
         , button "default:Master" "pavucontrol"
         ]
     right = colored Colors.yellow (item "date") ++ button "weather" (runInTerm True "wego -f emoji")

@@ -1,8 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.2.
+-- This file has been generated from package.yaml by hpack version 0.31.2.
 --
 -- see: https://github.com/sol/hpack
+--
+-- hash: 792b27b6e9acc2524c3e1817a6412419a6cab941202b4e6cb4ab4762e44ec3e5
 
 name:           xmo
 version:        0.1.0.0
@@ -30,6 +32,7 @@ library
       Colors.Solarized.Dark
       Colors.Solarized.Light
       XMonad.Layout.IfMaxAlt
+      XMonad.Layout.PerScreenModifier
   other-modules:
       Paths_xmo
   hs-source-dirs:
