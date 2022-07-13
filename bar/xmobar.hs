@@ -6,7 +6,7 @@ import Xmobar
 main :: IO ()
 main = do
   screen <- getScreen
-  xmobar config {position = OnScreen screen $ position config}
+  xmobar (config screen)
 
 getScreen :: IO Int
 getScreen = scr <$> getArgs
@@ -14,8 +14,8 @@ getScreen = scr <$> getArgs
     scr ["-x", s] = read s
     scr _ = 0
 
-config :: Config
-config =
+config :: Int -> Config
+config scr =
   defaultConfig
     { font = "xft:Noto Sans Nerd Font:size=11,xft:Noto Sans:size=11"
     , additionalFonts = ["xft:feathericons:size=12"]
@@ -23,7 +23,7 @@ config =
     , border = TopB
     , bgColor = Colors.background
     , fgColor = Colors.text
-    , position = BottomW L 100
+    , position = OnScreen scr $ BottomW L 100
     , commands =
         [ Run $
           Cpu
@@ -37,7 +37,8 @@ config =
             100
         , Run $ Memory ["-t", icon MEM ++ "<usedratio>%"] 100
         , Run $ Date "%H:%M %A%e %B" "date" 600
-        , Run StdinReader
+        -- , Run StdinReader
+        , Run $ NamedXPropertyLog ("_XMONAD_LOG_" ++ show scr) "XMonadLog"
         -- , Run $
         --   Wireless
         --     "wlo1"
@@ -76,7 +77,8 @@ config =
 myTemplate :: String
 myTemplate = mkTemplate left middle right
   where
-    left = item "StdinReader"
+    -- left = item "StdinReader"
+    left = item "XMonadLog"
     middle =
       concat
         [ button "cpu" (runInTerm False "gotop -l mylayout")

@@ -3,17 +3,16 @@ import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
 import Data.Monoid (All)
 import System.Exit (exitSuccess)
-import System.IO
 import XMonad
 import XMonad.Actions.CycleWS
 import XMonad.Actions.DynamicProjects
-import XMonad.Hooks.DynamicBars
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.DynamicProperty
 import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.FadeInactive
 import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.SetWMName
+import XMonad.Hooks.StatusBar
 import XMonad.Layout.Decoration
 import XMonad.Layout.IfMaxAlt
 import XMonad.Layout.MultiToggle
@@ -28,6 +27,7 @@ import XMonad.Prompt.ConfirmPrompt
 import qualified XMonad.StackSet as W
 import XMonad.Util.Dmenu
 import XMonad.Util.EZConfig
+import XMonad.Util.Loggers (logTitleOnScreen, shortenL, xmobarColorL)
 import XMonad.Util.NamedActions
 import XMonad.Util.NamedScratchpad
   ( NamedScratchpad(NS)
@@ -36,12 +36,12 @@ import XMonad.Util.NamedScratchpad
   , namedScratchpadAction
   , namedScratchpadManageHook
   )
-import XMonad.Util.Run
 import XMonad.Util.SpawnOnce
 import XMonad.Util.WorkspaceCompare
 
 main :: IO ()
-main = xmonad $ ewmhFullscreen . ewmh $ docks $ dynamicProjects projects myConfig
+main =
+  xmonad $ dynamicSBs barSpawner $ ewmhFullscreen . ewmh $ docks $ dynamicProjects projects myConfig
   where
     myConfig =
       addKeys $
@@ -169,32 +169,23 @@ myStartupHook = do
   spawnOnce "/home/david/.screenlayout/default.sh"
   spawnOnce "picom -f &"
   spawnOnce "qmenu_registrar &"
-  dynStatusBarStartup startXmobar killXmobar
   activateProject (head projects)
 
 myEventHook :: Event -> X All
-myEventHook =
-  dynStatusBarEventHook startXmobar killXmobar <+>
-  -- fullscreenEventHook <+>
-  dynamicPropertyChange "WM_NAME" (className =? "Spotify" --> centeredFloating)
-
-startXmobar :: ScreenId -> IO Handle
-startXmobar (S s) = spawnPipe $ "/home/david/.local/bin/xmobar -x " ++ show s
-
--- would need to run setcap in the build script to make wifi work... and also for
--- some reason weather.sh not working when xmobar self-compiling
--- startXmobar (S s) = spawnPipe $ "xmobar -x " ++ show s ++ " /home/david/projects/xmo/bar/xmobar.hs"
-killXmobar :: IO ()
-killXmobar = return () -- xmobar seems to get cleaned up automatically
+myEventHook = dynamicPropertyChange "WM_NAME" (className =? "Spotify" --> centeredFloating)
 
 myLogHook :: X ()
-myLogHook =
-  fadeInactiveLogHook 0.9 <+> do
-    pp <- myXmobarPP
-    multiPP pp pp
+myLogHook = fadeInactiveLogHook 0.9
 
-myXmobarPP :: X PP
-myXmobarPP = do
+barSpawner :: ScreenId -> IO StatusBarConfig
+barSpawner 0 =
+  pure $ statusBarPropTo "_XMONAD_LOG_0" "/home/david/.local/bin/xmobar -x 0" (myXmobarPP 0)
+barSpawner 1 =
+  pure $ statusBarPropTo "_XMONAD_LOG_1" "/home/david/.local/bin/xmobar -x 1" (myXmobarPP 1)
+barSpawner _ = mempty
+
+myXmobarPP :: ScreenId -> X PP
+myXmobarPP screen = do
   wsFormatter <- getWsFormatter
   return
     xmobarPP
@@ -206,8 +197,9 @@ myXmobarPP = do
       , ppHiddenNoWindows = ppHiddenNoWindows def . wsFormatter
       , ppSep = "  "
       , ppLayout = \s -> " <fn=1>" ++ s ++ "</fn>"
-      , ppOrder = \(ws:l:t:_) -> [l, ws, t]
+      , ppOrder = \(ws:l:_:tos:_) -> [l, ws, tos]
       , ppSort = mkWsSort getWsCompare
+      , ppExtras = [xmobarColorL Colors.cyan "" $ shortenL 70 $ logTitleOnScreen screen]
       }
   where
     getWsFormatter = formatWs <$> getWsIndex
@@ -248,20 +240,15 @@ runInShell cmd = do
 launchSiteAsApp :: String -> X ()
 launchSiteAsApp url = spawn $ "brave --app=" ++ url
 
--- launchSiteAsApp url = spawn $ "chromium --app=" ++ url
 launchEvernote :: X ()
 launchEvernote = launchSiteAsApp "http://www.evernote.com/Home.action"
 
 launchOutlook :: X ()
 launchOutlook = launchSiteAsApp "https://outlook.office.com/mail/inbox"
 
-launchCalendar :: X ()
-launchCalendar = launchSiteAsApp "https://teams.microsoft.com/_#/calendarv2"
-
 launchTeams :: X ()
 launchTeams = launchSiteAsApp "https://teams.microsoft.com/"
 
--- launchTeams = spawn "teams"
 launchSlack :: X ()
 launchSlack = spawn "slack"
 
